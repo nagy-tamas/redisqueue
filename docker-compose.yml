@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+  redisqueue_redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  redisqueue_producer:
+    image: redisqueue/producer
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./producer:/home/producer/app
+      - /home/producer/app/node_modules
+    environment:
+      - REDIS_HOST=redisqueue_redis
+    depends_on:
+      - "redisqueue_redis"
+
+  redisqueue_consumer:
+    image: redisqueue/consumer
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./consumer:/home/consumer/app
+      - /home/consumer/app/node_modules
+    environment:
+      - REDIS_HOST=redisqueue_redis
+    depends_on:
+      - "redisqueue_redis"
+      - "redisqueue_producer"

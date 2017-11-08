@@ -1,0 +1,8 @@
+{
+  "verbose": true,
+  "ignore": [
+    "*.test.js",
+    "public/*"
+  ],
+  "ext": "js json jsx"
+}
