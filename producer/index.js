@@ -1,25 +1,50 @@
 const redis = require('redis')
-const bluebird = require('bluebird')
+const PUBSUB_CHANNEL_NAME = 'redisqueue'
+const REDIS_HASH_STATUS = 'jobsstatus'
+const REDIS_HASH_PROCESSABLE = 'jobsprocessable'
+const REDIS_HASH_DONE = 'jobsdone'
 
-// make redis to use promises instead of callbacks
-bluebird.promisifyAll(redis.RedisClient.prototype);
-bluebird.promisifyAll(redis.Multi.prototype);
+let timer;
+
+const generateId = () => Math.round(Math.random() * 999999999)
+const generateData = (length) => new Array(length).fill(0).join('')
+const randomDelay = () => 2500 + (Math.random() * 1000)
+
+const config = {
+  redis: {
+    host: process.env.REDIS_HOSTS
+  }
+}
 
 const client = redis.createClient({
-  host: 'redisqueue_redis'
+  host: config.redis.host
 })
 
 client.on('error', function(err) {
   console.log('Error ' + err)
 })
 
-client.set('string key', 'string val', redis.print)
-client.hset('hash key', 'hashtest 1', 'some value', redis.print)
-client.hset(['hash key', 'hashtest 2', 'some other value'], redis.print)
-client.hkeys('hash key', function (err, replies) {
-  console.log(replies.length + ' replies:')
-  replies.forEach(function (reply, i) {
-    console.log('    ' + i + ': ' + reply)
+
+
+
+
+const pub = client.duplicate()
+
+const publishNewEntry = () => {
+  const id = generateId()
+  client.hset([REDIS_HASH_STATUS, id, 'new'], () => {
+    client.rpush([REDIS_HASH_PROCESSABLE, JSON.stringify({ id: id, data: generateData(5000) })], () => {
+      pub.publish(PUBSUB_CHANNEL_NAME, `A new job was inserted.`)
+      console.log(new Date(), `A new job (#${id}) was inserted into ${REDIS_HASH_PROCESSABLE} by producer.js`)
+      timer = setTimeout(publishNewEntry, randomDelay())
+    })
   })
+}
+
+timer = setTimeout(publishNewEntry, randomDelay())
+
+
+process.on('SIGTERM', function () {
   client.quit()
-})
+  pub.quit()
+});

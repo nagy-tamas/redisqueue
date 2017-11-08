@@ -6,18 +6,25 @@ services:
     ports:
       - "6379:6379"
 
+  redisqueue_redis_commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=redisqueue_redis
+    depends_on:
+      - "redisqueue_redis"
+    ports:
+      - "8081:8081"
+
   redisqueue_producer:
     image: redisqueue/producer
     build:
       context: .
       dockerfile: producer/Dockerfile
-    ports:
-      - "3001:3000"
     volumes:
       - ./producer:/home/producer/app
       - /home/producer/app/node_modules
     environment:
-      - REDIS_HOST=redisqueue_redis
+      - REDIS_HOSTS=redisqueue_redis
     depends_on:
       - "redisqueue_redis"
 
@@ -26,13 +33,11 @@ services:
     build:
       context: .
       dockerfile: consumer/Dockerfile
-    ports:
-      - "3002:3000"
     volumes:
       - ./consumer:/home/consumer/app
       - /home/consumer/app/node_modules
     environment:
-      - REDIS_HOST=redisqueue_redis
+      - REDIS_HOSTS=redisqueue_redis
     depends_on:
       - "redisqueue_redis"
       - "redisqueue_producer"
