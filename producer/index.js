@@ -35,7 +35,7 @@ const publishNewEntry = () => {
   client.hset([REDIS_HASH_STATUS, id, JSON.stringify({ new: new Date })], () => {
     client.rpush([REDIS_HASH_PROCESSABLE, JSON.stringify({ id: id, data: generateData(5000) })], () => {
       pub.publish(PUBSUB_CHANNEL_NAME, `A new job was inserted.`)
-      console.log(new Date(), `A new job (#${id}) was inserted into ${REDIS_HASH_PROCESSABLE} by producer.js`)
+      console.log(new Date(), `A new job (#${id}) was inserted into ${REDIS_HASH_PROCESSABLE}`)
       timer = setTimeout(publishNewEntry, delayBetweenInserts())
     })
   })
