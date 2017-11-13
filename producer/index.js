@@ -76,7 +76,7 @@ const publishNewEntry = () => {
 
 timer = setTimeout(publishNewEntry, delayBetweenInserts())
 
-sub.on('error', function(err) {
+pub.on('error', function(err) {
   console.log('Redis Error: ' + err)
 })
 
